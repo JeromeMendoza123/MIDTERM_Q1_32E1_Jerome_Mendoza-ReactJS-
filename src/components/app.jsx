@@ -1,0 +1,42 @@
+import { useState } from 'react';
+import Login from "../Login.jsx";
+import Dashboard from "./components/Dashboard.js";
+import { login as apiLogin, fetchRecipes, logout } from './apiClient.js';
+
+export default function App() {
+    const [auth, setAuth] = useState(() => {
+        const saved = localStorage.getItem("jwt.auth");
+        return saved ? JSON.parse(saved) : null;
+    });
+
+    const handleLoggedIn = async ({ username, password }) => {
+        const session = await apiLogin( username, password );
+        setAuth(session);
+        localStorage.setItem("jwt.auth", JSON.stringify(session));
+        return session;
+    };
+
+    const handleLogout = async (currentAuth) => {
+        await logout(currentAuth);
+        setAuth(null);
+        localStorage.removeItem("jwt.auth");
+    };
+
+    const handleFetchRecipes = async (currentAuth) => {
+        return fetchRecipes(currentAuth);
+    };
+
+    return (
+        <div className="panel">
+            {!auth ? (
+                <Login onLoggedIn={handleLoggedIn} />
+            ) : (
+                <Dashboard
+                    auth={auth}
+                    onLogout={handleLogout}
+                    onFetchRecipes={handleFetchRecipes}
+                />
+            )}
+        </div>
+    );
+}
