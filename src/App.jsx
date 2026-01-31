@@ -1,35 +1,42 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import Login from './components/Login.jsx'
+import Dashboard from './components/dashboard.jsx'
+import { login as apiLogin, fetchRecipes, logout } from './apiClient.js'
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [auth, setAuth] = useState(() => {
+    const saved = localStorage.getItem('jwt_auth');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const handleLoggedin = async ({ userName, password}) => {
+    const session = await apiLogin({ userName, password });
+    setAuth(session);
+    localStorage.setItem('jwt_auth', JSON.stringify(session));
+    return session;
+  };
+
+  const handleLogout = async (currentAuth) => {
+    await logout(currentAuth);
+    setAuth(null);
+    localStorage.removeItem('jwt_auth');
+  };
+
+  const handleFetchRecipes = async (currentAuth) => {
+    return fetchRecipes(currentAuth);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="panel">
+      {!auth ? (
+        <Login onLoggedin={handleLoggedin} />
+      ) : (
+        <Dashboard
+          auth={auth}
+          onLogout={handleLogout}
+          onFetchRecipes={handleFetchRecipes}
+        />
+      )}
+    </div>
+  );
 }
-
-export default App
